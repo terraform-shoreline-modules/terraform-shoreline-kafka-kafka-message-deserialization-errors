@@ -1,0 +1,130 @@
+{
+  "name": "kafka_message_deserialization_errors_incident",
+  "description": "This incident type involves errors that occur during the process of converting serialized data received by the Kafka message queue into a usable format. Deserialization errors can happen for various reasons, such as incorrect data types or missing fields in the serialized data. These errors can cause issues with the application's functionality and can lead to service disruptions or outages. Troubleshooting and resolving these errors can require a deep understanding of the application's code and the data being processed.",
+  "params": [
+    {
+      "name": "VERSION_NUMBER",
+      "value": ""
+    },
+    {
+      "name": "ZOOKEEPER_HOST",
+      "value": ""
+    },
+    {
+      "name": "TOPIC_NAME",
+      "value": ""
+    },
+    {
+      "name": "SUBJECT_NAME",
+      "value": ""
+    },
+    {
+      "name": "BROKER_PORT",
+      "value": ""
+    },
+    {
+      "name": "ZOOKEEPER_PORT",
+      "value": ""
+    },
+    {
+      "name": "KAFKA_LOG_FILE",
+      "value": ""
+    },
+    {
+      "name": "BROKER_HOST",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Kafka Message Deserialization Errors Incident.\nThis incident type involves errors that occur during the process of converting serialized data received by the Kafka message queue into a usable format. Deserialization errors can happen for various reasons, such as incorrect data types or missing fields in the serialized data. These errors can cause issues with the application's functionality and can lead to service disruptions or outages. Troubleshooting and resolving these errors can require a deep understanding of the application's code and the data being processed."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Find the most recent log file for the Kafka broker"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `ls -t /var/log/kafka/kafka.log.* | head -1`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Filter the log file for deserialization errors"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `grep \"Error deserializing key/value\" ${KAFKA_LOG_FILE}`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the topic configuration for message encoding"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `kafka-configs.sh --describe --zookeeper ${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT} --entity-type topics --entity-name ${TOPIC_NAME}`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the message schema for compatibility issues"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `kafka-schema-registry.sh --compatibility --subject ${SUBJECT_NAME} --version ${VERSION_NUMBER}`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## View the raw bytes of a message"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `kafka-console-consumer.sh --bootstrap-server ${BROKER_HOST}:${BROKER_PORT} --topic ${TOPIC_NAME} --from-beginning --formatter \"kafka.tools.DefaultMessageFormatter\" --property print.key=true --property print.value=true --max-messages 1`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Consider scaling up the resources allocated to the Kafka message queue, such as increasing the number of partitions or brokers, to handle the increased load."
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_update_kafka_config()"
+    }
+  ]
+}
